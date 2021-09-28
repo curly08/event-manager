@@ -11,7 +11,7 @@ def legislators_by_zipcode(zip)
   civic_info.key = 'AIzaSyClRzDqDh5MsXwnCWi0kOiiBivP6JsSyBw'
 
   begin
-    legislators = civic_info.representative_info_by_address(
+    civic_info.representative_info_by_address(
       address: zip,
       levels: 'country',
       roles: ['legislatorUpperBody', 'legislatorLowerBody']
@@ -33,6 +33,7 @@ template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
 contents.each do |row|
+  id = row[0]
   name = row[:first_name]
 
   zipcode = clean_zipcode(row[:zipcode])
@@ -41,5 +42,11 @@ contents.each do |row|
 
   form_letter = erb_template.result(binding)
 
-  puts form_letter
+  Dir.mkdir('output') unless Dir.exist?('output')
+
+  filename = "output/thanks_#{id}.html"
+
+  File.open(filename, 'w') do |file|
+    file.puts form_letter
+  end
 end
