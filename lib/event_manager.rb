@@ -1,6 +1,8 @@
 require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
+require 'date'
+require 'time'
 
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
@@ -53,14 +55,48 @@ contents = CSV.open(
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
+days_arr = []
+hours_arr = []
+
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
   zipcode = clean_zipcode(row[:zipcode])
   phone_number = clean_phone_number(row[:homephone])
+  registration_date = row[:regdate].split
+  registration_weekday = Date.strptime(registration_date[0], '%D').wday
+  registration_hour = Time.strptime(registration_date[1], '%k:%M').hour
   legislators = legislators_by_zipcode(zipcode)
 
-  form_letter = erb_template.result(binding)
+  # form_letter = erb_template.result(binding)
 
-  save_thank_you_letter(id, form_letter)
+  # save_thank_you_letter(id, form_letter)
+
+  days_arr << registration_weekday
+  hours_arr << registration_hour
 end
+ 
+days_arr.map! do |d, n|
+  case d
+  when 0
+    'Sunday'
+  when 1
+    'Monday'
+  when 2
+    'Tuesday'
+  when 3
+    'Wednesday'
+  when 4
+    'Thursday'
+  when 5
+    'Friday'
+  when 6
+    'Saturday'
+  end
+end
+
+days_sorted = days_arr.tally.sort_by { |day, frequency| frequency }.reverse!
+hours_sorted = hours_arr.tally.sort_by { |hour, frequency| frequency }.reverse!
+
+puts "The most common day that people registered on was #{days_sorted[0][0]}"
+puts "The most common hour that people registered during was #{hours_sorted[0][0]}:00"
